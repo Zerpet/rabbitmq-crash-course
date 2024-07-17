@@ -1,0 +1,52 @@
+---
+name: rabbitmq-crash-course
+
+services:
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    ports:
+      - "127.0.0.1:15672:15672"
+      - "5672:5672"
+    expose:
+      - 5672
+    configs:
+      - source: rabbitmq_conf_d_user
+        target: /etc/rabbitmq/conf.d/90-custom.conf
+    networks:
+      - rabbitmq
+    deploy:
+      replicas: 1
+
+  # https://perftest.rabbitmq.com/
+  perf_test:
+    image: pivotalrabbitmq/perf-test:2.21.0
+    depends_on:
+      - rabbitmq
+    deploy:
+      replicas: 0
+    networks:
+      - rabbitmq
+    environment:
+      URI: "amqp://rabbitmq:5672"
+      SERVERS_STARTUP_TIMEOUT: 10
+      CONSUMERS: 1
+      PRODUCERS: 1
+      # EXCHANGE: "my-exchange"
+      TYPE: "direct"
+      # QUEUE: "my-queue"
+      SIZE: 128 # in bytes
+      RATE: 100 # producer rate in msg/s
+      # QUEUE_PATTERN: "crash-course-%d"
+      # QUEUE_PATTERN_FROM: 1 # inclusive
+      # QUEUE_PATTERN_TO: 5 # inclusive
+      # QUORUM_QUEUE: true
+      # CONFIRM: 10
+      # MULTI_ACK_EVERY: 5
+
+
+networks:
+  rabbitmq: {}
+
+configs:
+  rabbitmq_conf_d_user:
+    file: ./conf.d/90-custom.conf
