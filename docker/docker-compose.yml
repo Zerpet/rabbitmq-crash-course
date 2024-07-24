@@ -7,11 +7,25 @@ services:
     ports:
       - "127.0.0.1:15672:15672"
       - "5672:5672"
+      ### UNCOMMENT to enable TLS
+      # - "5671:5671"
     expose:
       - 5672
+      ### UNCOMMENT to enable TLS
+      # - 5671
     configs:
       - source: rabbitmq_conf_d_user
         target: /etc/rabbitmq/conf.d/90-custom.conf
+      ### UNCOMMENT to enable TLS
+      # - source: cert
+      #   target: /var/run/rabbitmq/cert.pem
+      # - source: key
+      #   target: /var/run/rabbitmq/key.pem
+      #### UNCOMMENT to include advanced config
+      #### https://www.rabbitmq.com/docs/configure#advanced-config-file
+      #### https://github.com/rabbitmq/rabbitmq-server/blob/v3.13.x/deps/rabbit/docs/advanced.config.example
+      # - source: rabbitmq_advanced_config
+      #   target: /etc/rabbitmq/advanced.config
     networks:
       - rabbitmq
     deploy:
@@ -27,19 +41,20 @@ services:
     networks:
       - rabbitmq
     environment:
-      URI: "amqp://rabbitmq:5672"
+      URI: "amqps://admin:admin1234@rabbitmq:5671/rabbitmq_crash_course"
       SERVERS_STARTUP_TIMEOUT: 10
-      CONSUMERS: 1
+      CONSUMERS: 3
       PRODUCERS: 1
-      # EXCHANGE: "my-exchange"
+      EXCHANGE: "my-exchange"
       TYPE: "direct"
+      PRODUCER_CHANNEL_COUNT: 3
       # QUEUE: "my-queue"
       SIZE: 128 # in bytes
-      RATE: 100 # producer rate in msg/s
-      # QUEUE_PATTERN: "crash-course-%d"
-      # QUEUE_PATTERN_FROM: 1 # inclusive
-      # QUEUE_PATTERN_TO: 5 # inclusive
-      # QUORUM_QUEUE: true
+      RATE: 1000 # producer rate in msg/s
+      QUEUE_PATTERN: "crash-course-%d"
+      QUEUE_PATTERN_FROM: 1 # inclusive
+      QUEUE_PATTERN_TO: 3 # inclusive
+      QUORUM_QUEUE: true
       # CONFIRM: 10
       # MULTI_ACK_EVERY: 5
 
@@ -50,3 +65,12 @@ networks:
 configs:
   rabbitmq_conf_d_user:
     file: ./conf.d/90-custom.conf
+  ### UNCOMMENT cert and key to enable TLS
+  ### IMPORTANT: generate the certificates and copy them before uncommenting
+  # cert:
+  #   file: ./server_DFX24LW43G/cert.pem
+  # key:
+  #   file: ./server_DFX24LW43G/key.pem
+  ### UNCOMMENT for advanced config
+  # rabbitmq_advanced_config:
+  #   file: ./conf.d/advanced.config
